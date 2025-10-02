@@ -46,12 +46,12 @@ struct unionfind
 
 static inline unionfind_t *unionfind_create(uint32_t maxid)
 {
-    unionfind_t *uf = (unionfind_t*) calloc(1, sizeof(unionfind_t));
+    unionfind_t *uf = (unionfind_t *)calloc(1, sizeof(unionfind_t));
     uf->maxid = maxid;
-    uf->parent = (uint32_t *) malloc((maxid+1) * sizeof(uint32_t) * 2);
-    memset(uf->parent, 0xff, (maxid+1) * sizeof(uint32_t));
-    uf->size = uf->parent + (maxid+1);
-    memset(uf->size, 0, (maxid+1) * sizeof(uint32_t));
+    uf->parent = (uint32_t *)malloc((maxid + 1) * sizeof(uint32_t) * 2);
+    memset(uf->parent, 0xff, (maxid + 1) * sizeof(uint32_t));
+    uf->size = uf->parent + (maxid + 1);
+    memset(uf->size, 0, (maxid + 1) * sizeof(uint32_t));
     return uf;
 }
 
@@ -83,16 +83,18 @@ static inline uint32_t unionfind_get_representative(unionfind_t *uf, uint32_t id
 static inline uint32_t unionfind_get_representative(unionfind_t *uf, uint32_t id)
 {
     // unititialized node, so set to self
-    if (uf->parent[id] == 0xffffffff) {
+    if (uf->parent[id] == 0xffffffff)
+    {
         uf->parent[id] = id;
         return id;
     }
 
     // Path halving: make every node point to its grandparent (single pass)
     // This is simpler and faster than full path compression while still effective
-    while (uf->parent[id] != id) {
-        uf->parent[id] = uf->parent[uf->parent[id]];  // Point to grandparent
-        id = uf->parent[id];  // Move to grandparent
+    while (uf->parent[id] != id)
+    {
+        uf->parent[id] = uf->parent[uf->parent[id]]; // Point to grandparent
+        id = uf->parent[id];                         // Move to grandparent
     }
 
     return id;
@@ -127,11 +129,14 @@ static inline uint32_t unionfind_connect(unionfind_t *uf, uint32_t aid, uint32_t
     // read and so are probably in cache. Con: it might end up being
     // wasted effort -- the tree might be grafted onto another tree in
     // a moment!
-    if (asize > bsize) {
+    if (asize > bsize)
+    {
         uf->parent[broot] = aroot;
         uf->size[aroot] += bsize;
         return aroot;
-    } else {
+    }
+    else
+    {
         uf->parent[aroot] = broot;
         uf->size[broot] += asize;
         return broot;

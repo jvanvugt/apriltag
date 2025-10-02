@@ -37,13 +37,13 @@ either expressed or implied, of the Regents of The University of Michigan.
 
 // SIMD intrinsics for cross-platform optimization
 #if defined(__ARM_NEON) || defined(__ARM_NEON__)
-    #include <arm_neon.h>
-    #define SIMD_AVAILABLE 1
+#include <arm_neon.h>
+#define SIMD_AVAILABLE 1
 #elif defined(__SSE2__) || defined(_M_X64) || defined(_M_AMD64)
-    #include <emmintrin.h>
-    #define SIMD_AVAILABLE 1
+#include <emmintrin.h>
+#define SIMD_AVAILABLE 1
 #else
-    #define SIMD_AVAILABLE 0
+#define SIMD_AVAILABLE 0
 #endif
 
 #include "apriltag.h"
@@ -1229,67 +1229,67 @@ void do_minmax_task(void *p)
     for (int tx = 0; tx < tw; tx++)
     {
 #if SIMD_AVAILABLE
-        // SIMD-optimized min/max computation for 4x4 tile
-        #if defined(__ARM_NEON) || defined(__ARM_NEON__)
-            // ARM NEON path
-            uint8x16_t vmin = vdupq_n_u8(255);
-            uint8x16_t vmax = vdupq_n_u8(0);
-            
-            // Load all 4 rows of the 4x4 tile (16 bytes total)
-            for (int dy = 0; dy < tilesz; dy++)
-            {
-                uint8_t *row = &im->buf[(ty * tilesz + dy) * s + tx * tilesz];
-                // Load 4 bytes, replicate to 16 bytes is unnecessary, just load as 32-bit
-                uint32_t val;
-                memcpy(&val, row, 4);
-                uint8x8_t row_vals = vreinterpret_u8_u32(vdup_n_u32(val));
-                uint8x16_t row_vals_16 = vcombine_u8(row_vals, vdup_n_u8(0));
-                
-                vmin = vminq_u8(vmin, row_vals_16);
-                vmax = vmaxq_u8(vmax, row_vals_16);
-            }
-            
-            // Horizontal reduction to find min/max across all lanes
-            uint8x8_t vmin_low = vget_low_u8(vmin);
-            uint8x8_t vmax_low = vget_low_u8(vmax);
-            
-            // Reduce 8 lanes to 1
-            uint8_t min = vminv_u8(vmin_low);
-            uint8_t max = vmaxv_u8(vmax_low);
-        
-        #else
-            // x86 SSE2 path
-            __m128i vmin = _mm_set1_epi8((char)255);
-            __m128i vmax = _mm_set1_epi8(0);
-            
-            // Load all 4 rows of the 4x4 tile
-            for (int dy = 0; dy < tilesz; dy++)
-            {
-                uint8_t *row = &im->buf[(ty * tilesz + dy) * s + tx * tilesz];
-                // Load 4 bytes into lower 32 bits
-                __m128i row_vals = _mm_cvtsi32_si128(*(int32_t*)row);
-                
-                vmin = _mm_min_epu8(vmin, row_vals);
-                vmax = _mm_max_epu8(vmax, row_vals);
-            }
-            
-            // Horizontal reduction
-            // Reduce 16 bytes to 8
-            vmin = _mm_min_epu8(vmin, _mm_srli_si128(vmin, 8));
-            vmax = _mm_max_epu8(vmax, _mm_srli_si128(vmax, 8));
-            // Reduce 8 to 4
-            vmin = _mm_min_epu8(vmin, _mm_srli_si128(vmin, 4));
-            vmax = _mm_max_epu8(vmax, _mm_srli_si128(vmax, 4));
-            // Reduce 4 to 2
-            vmin = _mm_min_epu8(vmin, _mm_srli_si128(vmin, 2));
-            vmax = _mm_max_epu8(vmax, _mm_srli_si128(vmax, 2));
-            // Reduce 2 to 1
-            vmin = _mm_min_epu8(vmin, _mm_srli_si128(vmin, 1));
-            vmax = _mm_max_epu8(vmax, _mm_srli_si128(vmax, 1));
-            
-            uint8_t min = (uint8_t)_mm_cvtsi128_si32(vmin);
-            uint8_t max = (uint8_t)_mm_cvtsi128_si32(vmax);
-        #endif
+// SIMD-optimized min/max computation for 4x4 tile
+#if defined(__ARM_NEON) || defined(__ARM_NEON__)
+        // ARM NEON path
+        uint8x16_t vmin = vdupq_n_u8(255);
+        uint8x16_t vmax = vdupq_n_u8(0);
+
+        // Load all 4 rows of the 4x4 tile (16 bytes total)
+        for (int dy = 0; dy < tilesz; dy++)
+        {
+            uint8_t *row = &im->buf[(ty * tilesz + dy) * s + tx * tilesz];
+            // Load 4 bytes, replicate to 16 bytes is unnecessary, just load as 32-bit
+            uint32_t val;
+            memcpy(&val, row, 4);
+            uint8x8_t row_vals = vreinterpret_u8_u32(vdup_n_u32(val));
+            uint8x16_t row_vals_16 = vcombine_u8(row_vals, vdup_n_u8(0));
+
+            vmin = vminq_u8(vmin, row_vals_16);
+            vmax = vmaxq_u8(vmax, row_vals_16);
+        }
+
+        // Horizontal reduction to find min/max across all lanes
+        uint8x8_t vmin_low = vget_low_u8(vmin);
+        uint8x8_t vmax_low = vget_low_u8(vmax);
+
+        // Reduce 8 lanes to 1
+        uint8_t min = vminv_u8(vmin_low);
+        uint8_t max = vmaxv_u8(vmax_low);
+
+#else
+        // x86 SSE2 path
+        __m128i vmin = _mm_set1_epi8((char)255);
+        __m128i vmax = _mm_set1_epi8(0);
+
+        // Load all 4 rows of the 4x4 tile
+        for (int dy = 0; dy < tilesz; dy++)
+        {
+            uint8_t *row = &im->buf[(ty * tilesz + dy) * s + tx * tilesz];
+            // Load 4 bytes into lower 32 bits
+            __m128i row_vals = _mm_cvtsi32_si128(*(int32_t *)row);
+
+            vmin = _mm_min_epu8(vmin, row_vals);
+            vmax = _mm_max_epu8(vmax, row_vals);
+        }
+
+        // Horizontal reduction
+        // Reduce 16 bytes to 8
+        vmin = _mm_min_epu8(vmin, _mm_srli_si128(vmin, 8));
+        vmax = _mm_max_epu8(vmax, _mm_srli_si128(vmax, 8));
+        // Reduce 8 to 4
+        vmin = _mm_min_epu8(vmin, _mm_srli_si128(vmin, 4));
+        vmax = _mm_max_epu8(vmax, _mm_srli_si128(vmax, 4));
+        // Reduce 4 to 2
+        vmin = _mm_min_epu8(vmin, _mm_srli_si128(vmin, 2));
+        vmax = _mm_max_epu8(vmax, _mm_srli_si128(vmax, 2));
+        // Reduce 2 to 1
+        vmin = _mm_min_epu8(vmin, _mm_srli_si128(vmin, 1));
+        vmax = _mm_max_epu8(vmax, _mm_srli_si128(vmax, 1));
+
+        uint8_t min = (uint8_t)_mm_cvtsi128_si32(vmin);
+        uint8_t max = (uint8_t)_mm_cvtsi128_si32(vmax);
+#endif
 #else
         // Scalar fallback for platforms without SIMD
         uint8_t max = 0, min = 255;
